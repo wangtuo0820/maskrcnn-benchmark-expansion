@@ -2,6 +2,7 @@
 import datetime
 import logging
 import time
+import os
 
 import torch
 import torch.distributed as dist
@@ -9,6 +10,7 @@ import torch.distributed as dist
 from maskrcnn_benchmark.utils.comm import get_world_size
 from maskrcnn_benchmark.utils.metric_logger import MetricLogger
 
+from tensorboardX import SummaryWriter
 
 def reduce_loss_dict(loss_dict):
     """
@@ -44,6 +46,7 @@ def do_train(
     device,
     checkpoint_period,
     arguments,
+    output_dir,
 ):
     logger = logging.getLogger("maskrcnn_benchmark.trainer")
     logger.info("Start training")
@@ -53,6 +56,9 @@ def do_train(
     model.train()
     start_training_time = time.time()
     end = time.time()
+
+    writer = SummaryWriter(log_dir=os.path.join(output_dir, 'run'))
+
     for iteration, (images, targets, _) in enumerate(data_loader, start_iter):
         data_time = time.time() - end
         iteration = iteration + 1
@@ -79,6 +85,12 @@ def do_train(
         batch_time = time.time() - end
         end = time.time()
         meters.update(time=batch_time, data=data_time)
+
+        # add tensorboard -- tuo
+        if iteration % 20 == 0:
+            for name, meter in meters.meters.items():
+                if 'loss' in name:
+                    writer.add_scalar(name, meter.avg, iteration)
 
         eta_seconds = meters.time.global_avg * (max_iter - iteration)
         eta_string = str(datetime.timedelta(seconds=int(eta_seconds)))

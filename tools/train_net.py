@@ -71,6 +71,7 @@ def train(cfg, local_rank, distributed):
         device,
         checkpoint_period,
         arguments,
+        output_dir,
     )
 
     return model
@@ -112,7 +113,7 @@ def main():
     parser = argparse.ArgumentParser(description="PyTorch Object Detection Training")
     parser.add_argument(
         "--config-file",
-        default="",
+        default="../configs/tuo/e2e_faster_rcnn_R_50_C4_1x_1_gpu_voc.yaml",
         metavar="FILE",
         help="path to config file",
         type=str,
@@ -163,7 +164,7 @@ def main():
         config_str = "\n" + cf.read()
         logger.info(config_str)
     logger.info("Running with config:\n{}".format(cfg))
-
+    
     model = train(cfg, args.local_rank, args.distributed)
 
     if not args.skip_test:

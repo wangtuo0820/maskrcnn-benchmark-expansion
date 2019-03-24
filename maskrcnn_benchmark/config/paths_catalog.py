@@ -103,7 +103,15 @@ class DatasetCatalog(object):
         "cityscapes_fine_instanceonly_seg_test_cocostyle": {
             "img_dir": "cityscapes/images",
             "ann_file": "cityscapes/annotations/instancesonly_filtered_gtFine_test.json"
-        }
+        },
+        "voc_0712_trainval": {
+            "data_dir": "/home/lyh/dataset/VOCdevkit/VOC0712",
+            "split": "trainval"
+        },
+        "voc_0712_test": {
+            "data_dir": "/home/lyh/dataset/VOCdevkit/VOC0712",
+            "split": "test"
+        },
     }
 
     @staticmethod
