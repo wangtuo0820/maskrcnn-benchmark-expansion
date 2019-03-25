@@ -42,10 +42,10 @@ def align_and_update_state_dicts(model_state_dict, loaded_state_dict):
     log_str_template = "{: <{}} loaded from {: <{}} of shape {}"
     logger = logging.getLogger(__name__)
     for idx_new, idx_old in enumerate(idxs.tolist()):
-        if idx_old == -1:
-            logger.info("{: <{}} missed".format(current_keys[idx_new],max_size))
-            continue
         key = current_keys[idx_new]
+        if idx_old == -1 or 'running' in key: # don't restore bn params
+            logger.info("{: <{}} missed".format(key, max_size))
+            continue
         key_old = loaded_keys[idx_old]
         model_state_dict[key] = loaded_state_dict[key_old]
         logger.info(
