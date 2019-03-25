@@ -42,6 +42,26 @@ StageSpec = namedtuple(
 # Standard ResNet models
 # -----------------------------------------------------------------------------
 # ResNet-50 (including all stages)
+
+
+ResNet18StagesTo4 = tuple(
+    StageSpec(index=i, block_count=c, return_features=r)
+    for (i, c, r) in ((1, 2, False), (2, 2, False), (3, 2, True))
+)
+ResNet18StagesTo5 = tuple(
+    StageSpec(index=i, block_count=c, return_features=r)
+    for (i, c, r) in ((1, 2, False), (2, 2, False), (3, 2, False), (4, 2, True))
+)
+ResNet34StagesTo4 = tuple(
+    StageSpec(index=i, block_count=c, return_features=r)
+    for (i, c, r) in ((1, 3, False), (2, 4, False), (3, 6, True))
+)
+ResNet34StagesTo5 = tuple(
+    StageSpec(index=i, block_count=c, return_features=r)
+    for (i, c, r) in ((1, 3, False), (2, 4, False), (3, 6, False), (4, 3, True))
+)
+
+
 ResNet50StagesTo5 = tuple(
     StageSpec(index=i, block_count=c, return_features=r)
     for (i, c, r) in ((1, 3, False), (2, 4, False), (3, 6, False), (4, 3, True))
@@ -98,9 +118,11 @@ class ResNet(nn.Module):
         width_per_group = cfg.MODEL.RESNETS.WIDTH_PER_GROUP
         in_channels = cfg.MODEL.RESNETS.STEM_OUT_CHANNELS
         stage2_bottleneck_channels = num_groups * width_per_group
-        stage2_out_channels = cfg.MODEL.RESNETS.RES2_OUT_CHANNELS
+        use_bottleneck = cfg.MODEL.RESNETS.USE_BOTTLENECK
+        stage2_out_channels = cfg.MODEL.RESNETS.RES2_OUT_CHANNELS if use_bottleneck else 64
         self.stages = []
         self.return_features = {}
+
         for stage_spec in stage_specs:
             name = "layer" + str(stage_spec.index)
             stage2_relative_factor = 2 ** (stage_spec.index - 1)
@@ -120,6 +142,7 @@ class ResNet(nn.Module):
             self.add_module(name, module)
             self.stages.append(name)
             self.return_features[name] = stage_spec.return_features
+
 
         # Optionally freeze (requires_grad=False) parts of the backbone
         self._freeze_backbone(cfg.MODEL.BACKBONE.FREEZE_CONV_BODY_AT)
@@ -142,6 +165,7 @@ class ResNet(nn.Module):
             x = getattr(self, stage_name)(x)
             if self.return_features[stage_name]:
                 outputs.append(x)
+
         return outputs
 
 
@@ -222,6 +246,81 @@ def _make_stage(
         stride = 1
         in_channels = out_channels
     return nn.Sequential(*blocks)
+
+class ResBlock(nn.Module):
+    def __init__(
+        self,
+        in_channels,
+        out_channels,
+        num_groups,
+        stride,
+        dilation,
+        norm_func
+    ):
+        super(ResBlock, self).__init__()
+
+        self.downsample = None
+        if in_channels != out_channels:
+            down_stride = stride if dilation == 1 else 1
+            self.downsample = nn.Sequential(
+                Conv2d(
+                    in_channels, out_channels,
+                    kernel_size=1, stride=down_stride, bias=False
+                ),
+                norm_func(out_channels),
+            )
+            for modules in [self.downsample,]:
+                for l in modules.modules():
+                    if isinstance(l, Conv2d):
+                        nn.init.kaiming_uniform_(l.weight, a=1)
+
+        if dilation > 1:
+            stride = 1 # reset to be 1
+
+
+        self.conv1 = Conv2d(
+            in_channels,
+            out_channels,
+            kernel_size=3,
+            padding=dilation,
+            stride=stride,
+            bias=False,
+        )
+        self.bn1 = norm_func(out_channels)
+        # TODO: specify init for the above
+
+        self.conv2 = Conv2d(
+            out_channels,
+            out_channels,
+            kernel_size=3,
+            padding=dilation,
+            bias=False,
+            groups=num_groups,
+            dilation=dilation
+        )
+        self.bn2 = norm_func(out_channels)
+
+        for l in [self.conv1, self.conv2,]:
+            nn.init.kaiming_uniform_(l.weight, a=1)
+
+    def forward(self, x):
+        identity = x
+
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = F.relu_(out)
+
+        out = self.conv2(out)
+        out = self.bn2(out)
+
+        if self.downsample is not None:
+            identity = self.downsample(x)
+
+        out += identity
+        out = F.relu_(out)
+
+        return out
+
 
 
 class Bottleneck(nn.Module):
@@ -335,6 +434,26 @@ class BaseStem(nn.Module):
         x = F.max_pool2d(x, kernel_size=3, stride=2, padding=1)
         return x
 
+class ResBlockWithFixedBatchNorm(ResBlock):
+    def __init__(
+        self,
+        in_channels,
+        bottleneck_channels, # no use
+        out_channels,
+        num_groups=1,
+        stride_in_1x1=True, # no use
+        stride=1,
+        dilation=1
+    ):
+        super(ResBlockWithFixedBatchNorm, self).__init__(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            num_groups=num_groups,
+            stride=stride,
+            dilation=dilation,
+            norm_func=FrozenBatchNorm2d
+        )
+
 
 class BottleneckWithFixedBatchNorm(Bottleneck):
     def __init__(
@@ -365,6 +484,26 @@ class StemWithFixedBatchNorm(BaseStem):
             cfg, norm_func=FrozenBatchNorm2d
         )
 
+
+class ResBlockWithGN(Bottleneck):
+    def __init__(
+        self,
+        in_channels,
+        bottleneck_channels, # no use
+        out_channels,
+        num_groups=1,
+        stride_in_1x1=True, # no use
+        stride=1,
+        dilation=1
+    ):
+        super(BottleneckWithGN, self).__init__(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            num_groups=num_groups,
+            stride=stride,
+            dilation=dilation,
+            norm_func=group_norm
+        )
 
 class BottleneckWithGN(Bottleneck):
     def __init__(
@@ -397,6 +536,8 @@ class StemWithGN(BaseStem):
 _TRANSFORMATION_MODULES = Registry({
     "BottleneckWithFixedBatchNorm": BottleneckWithFixedBatchNorm,
     "BottleneckWithGN": BottleneckWithGN,
+    "ResBlockWithFixedBatchNorm": ResBlockWithFixedBatchNorm,
+    "ResBlockWithGN": ResBlockWithGN,
 })
 
 _STEM_MODULES = Registry({
@@ -405,6 +546,10 @@ _STEM_MODULES = Registry({
 })
 
 _STAGE_SPECS = Registry({
+    "R-18-C4": ResNet18StagesTo4,
+    "R-18-C5": ResNet18StagesTo5,
+    "R-34-C4": ResNet34StagesTo4,
+    "R-34-C5": ResNet34StagesTo5,
     "R-50-C4": ResNet50StagesTo4,
     "R-50-C5": ResNet50StagesTo5,
     "R-101-C4": ResNet101StagesTo4,

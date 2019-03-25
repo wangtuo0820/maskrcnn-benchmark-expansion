@@ -59,7 +59,7 @@ class RPNModule(torch.nn.Module):
 
         anchor_generator = make_anchor_generator(cfg)
 
-        in_channels = cfg.MODEL.BACKBONE.OUT_CHANNELS
+        in_channels = cfg.MODEL.BACKBONE.OUT_CHANNELS if cfg.MODEL.RESNETS.USE_BOTTLENECK else 64*4
         rpn_head = registry.RPN_HEADS[cfg.MODEL.RPN.RPN_HEAD]
         head = rpn_head(
             cfg, in_channels, anchor_generator.num_anchors_per_location()[0]

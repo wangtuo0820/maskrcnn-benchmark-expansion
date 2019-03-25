@@ -10,6 +10,7 @@ from maskrcnn_benchmark.modeling.make_layers import group_norm
 from maskrcnn_benchmark.modeling.make_layers import make_fc
 
 
+@registry.ROI_BOX_FEATURE_EXTRACTORS.register("ResNet18Conv5ROIFeatureExtractor")
 @registry.ROI_BOX_FEATURE_EXTRACTORS.register("ResNet50Conv5ROIFeatureExtractor")
 class ResNet50Conv5ROIFeatureExtractor(nn.Module):
     def __init__(self, config):
@@ -32,7 +33,7 @@ class ResNet50Conv5ROIFeatureExtractor(nn.Module):
             width_per_group=config.MODEL.RESNETS.WIDTH_PER_GROUP,
             stride_in_1x1=config.MODEL.RESNETS.STRIDE_IN_1X1,
             stride_init=None,
-            res2_out_channels=config.MODEL.RESNETS.RES2_OUT_CHANNELS,
+            res2_out_channels=config.MODEL.RESNETS.RES2_OUT_CHANNELS if config.MODEL.RESNETS.USE_BOTTLENECK else 64,
             dilation=config.MODEL.RESNETS.RES5_DILATION
         )
 

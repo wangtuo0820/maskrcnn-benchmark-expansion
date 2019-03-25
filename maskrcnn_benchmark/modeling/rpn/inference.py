@@ -55,6 +55,7 @@ class RPNPostProcessor(torch.nn.Module):
             targets: list[BoxList]
         """
         # Get the device we're operating on
+
         device = proposals[0].bbox.device
 
         gt_boxes = [target.copy_with_fields([]) for target in targets]
@@ -137,8 +138,10 @@ class RPNPostProcessor(torch.nn.Module):
         for a, o, b in zip(anchors, objectness, box_regression):
             sampled_boxes.append(self.forward_for_single_feature_map(a, o, b))
 
+
         boxlists = list(zip(*sampled_boxes))
         boxlists = [cat_boxlist(boxlist) for boxlist in boxlists]
+
 
         if num_levels > 1:
             boxlists = self.select_over_all_levels(boxlists)
