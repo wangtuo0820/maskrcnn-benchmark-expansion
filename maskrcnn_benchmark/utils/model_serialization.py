@@ -43,6 +43,8 @@ def align_and_update_state_dicts(model_state_dict, loaded_state_dict):
     logger = logging.getLogger(__name__)
     for idx_new, idx_old in enumerate(idxs.tolist()):
         if idx_old == -1:
+            print('-'*200)
+            logger.info("{: <{}} missed".format(current_keys[idx_new],max_size))
             continue
         key = current_keys[idx_new]
         key_old = loaded_keys[idx_old]
@@ -56,7 +58,6 @@ def align_and_update_state_dicts(model_state_dict, loaded_state_dict):
                 tuple(loaded_state_dict[key_old].shape),
             )
         )
-
 
 def strip_prefix_if_present(state_dict, prefix):
     keys = sorted(state_dict.keys())
