@@ -10,6 +10,8 @@ from .loss import make_rpn_loss_evaluator
 from .anchor_generator import make_anchor_generator
 from .inference import make_rpn_postprocessor
 
+from maskrcnn_benchmark.expansion.deform_conv_v2 import DeformConv2d
+
 @registry.RPN_HEADS.register("SingleConvRPNHead")
 class RPNHead(nn.Module):
     """
@@ -23,8 +25,10 @@ class RPNHead(nn.Module):
             in_channels (int): number of channels of the input feature
             num_anchors (int): number of anchors to be predicted
         """
+        print("CHANGETUO")
         super(RPNHead, self).__init__()
         self.conv = nn.Conv2d(
+        #self.conv = DeformConv2d(
             in_channels, in_channels, kernel_size=3, stride=1, padding=1
         )
         self.cls_logits = nn.Conv2d(in_channels, num_anchors, kernel_size=1, stride=1)
@@ -33,6 +37,8 @@ class RPNHead(nn.Module):
         )
 
         for l in [self.conv, self.cls_logits, self.bbox_pred]:
+            if isinstance(l, DeformConv2d):
+                continue
             torch.nn.init.normal_(l.weight, std=0.01)
             torch.nn.init.constant_(l.bias, 0)
 

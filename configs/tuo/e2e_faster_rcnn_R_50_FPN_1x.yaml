@@ -3,7 +3,7 @@ MODEL:
   WEIGHT: "catalog://ImageNetPretrained/MSRA/R-50"
   BACKBONE:
     CONV_BODY: "R-50-FPN"
-    OUT_CHANNELS: 256
+    OUT_CHANNELS: 128
   RPN:
     USE_FPN: True
     ANCHOR_STRIDE: (4, 8, 16, 32, 64)
@@ -20,6 +20,9 @@ MODEL:
     FEATURE_EXTRACTOR: "FPN2MLPFeatureExtractor"
     PREDICTOR: "FPNPredictor"
     NUM_CLASSES: 21
+INPUT:
+  MIN_SIZE_TRAIN: (600,)
+  MAX_SIZE_TRAIN: 1000
 DATASETS:
   TRAIN: ("voc_0712_trainval", )
   TEST: ("voc_0712_test",)

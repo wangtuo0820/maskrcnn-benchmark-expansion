@@ -36,8 +36,8 @@ if __name__ == '__main__':
     
     #config_file = "../configs/caffe2/e2e_mask_rcnn_R_50_FPN_1x_caffe2.yaml"
     #config_file = "../configs/caffe2/e2e_mask_rcnn_R_50_C4_1x_caffe2.yaml"
-    #config_file = "../configs/caffe2/e2e_faster_rcnn_R_50_C4_1x_caffe2.yaml"
-    config_file = "../configs/caffe2/e2e_keypoint_rcnn_R_50_FPN_1x_caffe2.yaml"
+    config_file = "../configs/caffe2/e2e_faster_rcnn_R_50_C4_1x_caffe2.yaml"
+    #config_file = "../configs/caffe2/e2e_keypoint_rcnn_R_50_FPN_1x_caffe2.yaml"
     
     # update the config options with the config file
     cfg.merge_from_file(config_file)
