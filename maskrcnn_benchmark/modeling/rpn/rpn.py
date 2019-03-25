@@ -25,7 +25,6 @@ class RPNHead(nn.Module):
             in_channels (int): number of channels of the input feature
             num_anchors (int): number of anchors to be predicted
         """
-        print("CHANGETUO")
         super(RPNHead, self).__init__()
         self.conv = nn.Conv2d(
         #self.conv = DeformConv2d(
