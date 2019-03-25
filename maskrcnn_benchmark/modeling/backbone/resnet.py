@@ -333,7 +333,8 @@ class Bottleneck(nn.Module):
         stride_in_1x1,
         stride,
         dilation,
-        norm_func
+        norm_func,
+        use_se=False,
     ):
         super(Bottleneck, self).__init__()
 
@@ -390,6 +391,10 @@ class Bottleneck(nn.Module):
         for l in [self.conv1, self.conv2, self.conv3,]:
             nn.init.kaiming_uniform_(l.weight, a=1)
 
+        self.se_module = None
+        if use_se:
+            self.se_module = SEModule(out_channels, reduction=16)
+
     def forward(self, x):
         identity = x
 
@@ -407,7 +412,11 @@ class Bottleneck(nn.Module):
         if self.downsample is not None:
             identity = self.downsample(x)
 
+        if self.se_module is not None:
+            out = self.se_module(out)
+
         out += identity
+
         out = F.relu_(out)
 
         return out
@@ -477,6 +486,28 @@ class BottleneckWithFixedBatchNorm(Bottleneck):
             norm_func=FrozenBatchNorm2d
         )
 
+class SEBottleneckWithFixedBatchNorm(Bottleneck):
+    def __init__(
+        self,
+        in_channels,
+        bottleneck_channels,
+        out_channels,
+        num_groups=1,
+        stride_in_1x1=True,
+        stride=1,
+        dilation=1
+    ):
+        super(SEBottleneckWithFixedBatchNorm, self).__init__(
+            in_channels=in_channels,
+            bottleneck_channels=bottleneck_channels,
+            out_channels=out_channels,
+            num_groups=num_groups,
+            stride_in_1x1=stride_in_1x1,
+            stride=stride,
+            dilation=dilation,
+            norm_func=FrozenBatchNorm2d,
+            use_se=True
+        )
 
 class StemWithFixedBatchNorm(BaseStem):
     def __init__(self, cfg):
@@ -485,7 +516,7 @@ class StemWithFixedBatchNorm(BaseStem):
         )
 
 
-class ResBlockWithGN(Bottleneck):
+class ResBlockWithGN(ResBlock):
     def __init__(
         self,
         in_channels,
@@ -496,7 +527,7 @@ class ResBlockWithGN(Bottleneck):
         stride=1,
         dilation=1
     ):
-        super(BottleneckWithGN, self).__init__(
+        super(ResBlockWithGN, self).__init__(
             in_channels=in_channels,
             out_channels=out_channels,
             num_groups=num_groups,
@@ -527,15 +558,57 @@ class BottleneckWithGN(Bottleneck):
             norm_func=group_norm
         )
 
+class SEBottleneckWithGN(Bottleneck):
+    def __init__(
+        self,
+        in_channels,
+        bottleneck_channels,
+        out_channels,
+        num_groups=1,
+        stride_in_1x1=True,
+        stride=1,
+        dilation=1
+    ):
+        super(SEBottleneckWithGN, self).__init__(
+            in_channels=in_channels,
+            bottleneck_channels=bottleneck_channels,
+            out_channels=out_channels,
+            num_groups=num_groups,
+            stride_in_1x1=stride_in_1x1,
+            stride=stride,
+            dilation=dilation,
+            norm_func=group_norm
+            use_se=True
+        )
+
 
 class StemWithGN(BaseStem):
     def __init__(self, cfg):
         super(StemWithGN, self).__init__(cfg, norm_func=group_norm)
 
+class SEModule(nn.Module):
+    def __init__(self, channels, reduction):
+        super(SEModule, self).__init__()
+        self.avg_pool = nn.AdaptivePool2d(1)
+        self.fc1 = nn.Conv2d(channels, channels // reduction, kernel_size=1, padding=0)
+        self.relu = nn.ReLU(inplace=True)
+        self.fc2 = nn.Conv2d(channels // reduction, channels, kernel_size=1, padding=0)
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+        module_input = x
+        x = self.avg_pool(x)
+        x = self.fc1(x)
+        x = self.relu(x)
+        x = self.fc2(x)
+        x = self.sigmoid(x)
+        return module_input * x
 
 _TRANSFORMATION_MODULES = Registry({
     "BottleneckWithFixedBatchNorm": BottleneckWithFixedBatchNorm,
     "BottleneckWithGN": BottleneckWithGN,
+    "SEBottleneckWithFixedBatchNorm": SEBottleneckWithFixedBatchNorm,
+    "SEBottleneckWithGN": SEBottleneckWithGN,
     "ResBlockWithFixedBatchNorm": ResBlockWithFixedBatchNorm,
     "ResBlockWithGN": ResBlockWithGN,
 })
