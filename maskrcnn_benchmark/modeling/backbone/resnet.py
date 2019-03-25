@@ -577,7 +577,7 @@ class SEBottleneckWithGN(Bottleneck):
             stride_in_1x1=stride_in_1x1,
             stride=stride,
             dilation=dilation,
-            norm_func=group_norm
+            norm_func=group_norm,
             use_se=True
         )
 
