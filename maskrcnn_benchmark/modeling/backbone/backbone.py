@@ -22,12 +22,14 @@ def build_resnet_backbone(cfg):
     return model
 
 
+@registry.BACKBONES.register("R-18-FPN")
+@registry.BACKBONES.register("R-34-FPN")
 @registry.BACKBONES.register("R-50-FPN")
 @registry.BACKBONES.register("R-101-FPN")
 @registry.BACKBONES.register("R-152-FPN")
 def build_resnet_fpn_backbone(cfg):
     body = resnet.ResNet(cfg)
-    in_channels_stage2 = cfg.MODEL.RESNETS.RES2_OUT_CHANNELS
+    in_channels_stage2 = cfg.MODEL.RESNETS.RES2_OUT_CHANNELS if cfg.MODEL.RESNETS.USE_BOTTLENECK else 64
     out_channels = cfg.MODEL.BACKBONE.OUT_CHANNELS
     fpn = fpn_module.FPN(
         in_channels_list=[

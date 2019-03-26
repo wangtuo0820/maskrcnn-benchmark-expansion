@@ -47,6 +47,8 @@ def align_and_update_state_dicts(model_state_dict, loaded_state_dict):
             logger.info("{: <{}} missed".format(key, max_size))
             continue
         key_old = loaded_keys[idx_old]
+        print("----------------------------")
+        print(key, "    -----    ", key_old)
         model_state_dict[key] = loaded_state_dict[key_old]
         logger.info(
             log_str_template.format(
