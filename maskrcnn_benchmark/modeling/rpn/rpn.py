@@ -26,7 +26,7 @@ class RPNHead(nn.Module):
             num_anchors (int): number of anchors to be predicted
         """
         super(RPNHead, self).__init__()
-        self.conv = nn.Conv2d(
+        self.conv = nn.Conv2d( # origin
         #self.conv = DeformConv2d(
             in_channels, in_channels, kernel_size=3, stride=1, padding=1
         )
