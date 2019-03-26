@@ -1,3 +1,13 @@
+# INTRODUCTION
+This project is an expansion version of [maskrcnn_benchmark](https://github.com/facebookresearch/maskrcnn-benchmark). 
+Expansion includes:
+- use different backbones 
+- use deformable conv
+- Cascade RCNN (coming soon...)
+- OHNM (coming soon...)
+- more (waiting for issues or pull requests)
+Details for those expantions please refer to relative branch. I will merge it into master right quick.
+
 # Faster R-CNN and Mask R-CNN in PyTorch 1.0
 
 This project aims at providing the necessary building blocks for easily
