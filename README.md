@@ -1,5 +1,5 @@
 # Backbone
-This branch implement some backbone which origin maskrcnn_benchmark project don't contain, config file for those backbone can be found in configs/tuo.
+This branch implement some backbones which origin maskrcnn_benchmark project don't contain, config files for those backbone can be found in `configs/tuo`.
 - resnet 18/34
 You can download pretrain Model from [resnet18](https://download.pytorch.org/models/resnet18-5c106cde.pth) and [resnet34](https://download.pytorch.org/models/resnet34-333f7ec4.pth)
 - senet
