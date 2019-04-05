@@ -266,7 +266,8 @@ class ResBlock(nn.Module):
         num_groups,
         stride,
         dilation,
-        norm_func
+        norm_func,
+        use_se=False,
     ):
         super(ResBlock, self).__init__()
 
@@ -314,6 +315,10 @@ class ResBlock(nn.Module):
         for l in [self.conv1, self.conv2,]:
             nn.init.kaiming_uniform_(l.weight, a=1)
 
+        self.se_module = None
+        if use_se:
+            self.se_module = SEModule(out_channels, reduction=16)
+
     def forward(self, x):
         identity = x
 
@@ -326,6 +331,9 @@ class ResBlock(nn.Module):
 
         if self.downsample is not None:
             identity = self.downsample(x)
+
+        if self.se_module is not None:
+            out = self.se_module(out)
 
         out += identity
         out = F.relu_(out)
@@ -454,6 +462,27 @@ class BaseStem(nn.Module):
         x = F.max_pool2d(x, kernel_size=3, stride=2, padding=1)
         return x
 
+class SEResBlockWithFixedBatchNorm(ResBlock):
+    def __init__(
+        self,
+        in_channels,
+        bottleneck_channels, # no use
+        out_channels,
+        num_groups=1,
+        stride_in_1x1=True, # no use
+        stride=1,
+        dilation=1
+    ):
+        super(SEResBlockWithFixedBatchNorm, self).__init__(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            num_groups=num_groups,
+            stride=stride,
+            dilation=dilation,
+            norm_func=FrozenBatchNorm2d,
+            use_se=True,
+        )
+
 class ResBlockWithFixedBatchNorm(ResBlock):
     def __init__(
         self,
@@ -526,6 +555,26 @@ class StemWithFixedBatchNorm(BaseStem):
             cfg, norm_func=FrozenBatchNorm2d
         )
 
+class SEResBlockWithGN(ResBlock):
+    def __init__(
+        self,
+        in_channels,
+        bottleneck_channels, # no use
+        out_channels,
+        num_groups=1,
+        stride_in_1x1=True, # no use
+        stride=1,
+        dilation=1
+    ):
+        super(SEResBlockWithGN, self).__init__(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            num_groups=num_groups,
+            stride=stride,
+            dilation=dilation,
+            norm_func=group_norm,
+            use_se=True,
+        )
 
 class ResBlockWithGN(ResBlock):
     def __init__(
@@ -600,7 +649,7 @@ class StemWithGN(BaseStem):
 class SEModule(nn.Module):
     def __init__(self, channels, reduction):
         super(SEModule, self).__init__()
-        self.avg_pool = nn.AdaptivePool2d(1)
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
         self.fc1 = nn.Conv2d(channels, channels // reduction, kernel_size=1, padding=0)
         self.relu = nn.ReLU(inplace=True)
         self.fc2 = nn.Conv2d(channels // reduction, channels, kernel_size=1, padding=0)
@@ -622,6 +671,8 @@ _TRANSFORMATION_MODULES = Registry({
     "SEBottleneckWithGN": SEBottleneckWithGN,
     "ResBlockWithFixedBatchNorm": ResBlockWithFixedBatchNorm,
     "ResBlockWithGN": ResBlockWithGN,
+    "SEResBlockWithFixedBatchNorm": SEResBlockWithFixedBatchNorm,
+    "SEResBlockWithGN": SEResBlockWithGN,
 })
 
 _STEM_MODULES = Registry({
@@ -639,7 +690,9 @@ _STAGE_SPECS = Registry({
     "R-101-C4": ResNet101StagesTo4,
     "R-101-C5": ResNet101StagesTo5,
     "R-18-FPN": ResNet18FPNStagesTo5,
+    "R-18-FPN-RETINANET": ResNet18FPNStagesTo5,
     "R-34-FPN": ResNet34FPNStagesTo5,
+    "R-34-FPN-RETINANET": ResNet18FPNStagesTo5,
     "R-50-FPN": ResNet50FPNStagesTo5,
     "R-50-FPN-RETINANET": ResNet50FPNStagesTo5,
     "R-101-FPN": ResNet101FPNStagesTo5,

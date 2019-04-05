@@ -47,11 +47,13 @@ def build_resnet_fpn_backbone(cfg):
     model = nn.Sequential(OrderedDict([("body", body), ("fpn", fpn)]))
     return model
 
+@registry.BACKBONES.register("R-18-FPN-RETINANET")
+@registry.BACKBONES.register("R-34-FPN-RETINANET")
 @registry.BACKBONES.register("R-50-FPN-RETINANET")
 @registry.BACKBONES.register("R-101-FPN-RETINANET")
 def build_resnet_fpn_p3p7_backbone(cfg):
     body = resnet.ResNet(cfg)
-    in_channels_stage2 = cfg.MODEL.RESNETS.RES2_OUT_CHANNELS
+    in_channels_stage2 = cfg.MODEL.RESNETS.RES2_OUT_CHANNELS if cfg.MODEL.RESNETS.USE_BOTTLENECK else 64
     out_channels = cfg.MODEL.BACKBONE.OUT_CHANNELS
     in_channels_p6p7 = in_channels_stage2 * 8 if cfg.MODEL.RETINANET.USE_C5 \
         else out_channels

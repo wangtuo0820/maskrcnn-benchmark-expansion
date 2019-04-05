@@ -43,7 +43,7 @@ def align_and_update_state_dicts(model_state_dict, loaded_state_dict):
     logger = logging.getLogger(__name__)
     for idx_new, idx_old in enumerate(idxs.tolist()):
         key = current_keys[idx_new]
-        if idx_old == -1 or 'running' in key: # don't restore bn params
+        if idx_old == -1: # or 'running' in key: # don't restore bn params
             logger.info("{: <{}} missed".format(key, max_size))
             continue
         key_old = loaded_keys[idx_old]

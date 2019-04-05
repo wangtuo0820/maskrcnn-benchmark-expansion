@@ -1,13 +1,17 @@
 MODEL:
   META_ARCHITECTURE: "GeneralizedRCNN"
-  WEIGHT: "catalog://ImageNetPretrained/MSRA/R-50"
-  #WEIGHT: "/home/lyh/.torch/models/resnet50-19c8e357.pth"
+  WEIGHT: "/home/gxd/.torch/models/resnet34-333f7ec4.pth"
   RPN:
     PRE_NMS_TOP_N_TEST: 6000
     POST_NMS_TOP_N_TEST: 300
     ANCHOR_SIZES: (128, 256, 512)
   ROI_BOX_HEAD:
     NUM_CLASSES: 21
+  RESNETS:
+    USE_BOTTLENECK: False
+    TRANS_FUNC: "SEResBlockWithFixedBatchNorm"
+  BACKBONE:
+    CONV_BODY: "R-34-C4"
 DATASETS:
   TRAIN: ("voc_0712_trainval",)
   TEST: ("voc_0712_test",)
@@ -17,6 +21,10 @@ SOLVER:
   STEPS: (50000, )
   MAX_ITER: 70000
   IMS_PER_BATCH: 1
-  CHECKPOINT_PERIOD: 2000
+  CHECKPOINT_PERIOD: 2500
 TEST:
   IMS_PER_BATCH: 1
+INPUT:
+  PIXEL_MEAN: [0.485, 0.456, 0.406]
+  PIXEL_STD: [0.229, 0.224, 0.225]
+  TO_BGR255: False
