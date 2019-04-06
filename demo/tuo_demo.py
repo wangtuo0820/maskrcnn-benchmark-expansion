@@ -28,16 +28,16 @@ def imshow(img):
     
 
 if __name__ == '__main__':
-#    image = load("http://farm3.staticflickr.com/2469/3915380994_2e611b1779_z.jpg")
+    image = load("http://farm3.staticflickr.com/2469/3915380994_2e611b1779_z.jpg")
     import cv2
-    image = cv2.imread("/home/lyh/dataset/lsp_dataset_original/images/im0021.jpg")
+#    image = cv2.imread("/home/lyh/dataset/lsp_dataset_original/images/im0021.jpg") # use local image
    # imshow(image)
     
     
     #config_file = "../configs/caffe2/e2e_mask_rcnn_R_50_FPN_1x_caffe2.yaml"
     #config_file = "../configs/caffe2/e2e_mask_rcnn_R_50_C4_1x_caffe2.yaml"
-    #config_file = "../configs/caffe2/e2e_faster_rcnn_R_50_C4_1x_caffe2.yaml"
-    config_file = "../configs/caffe2/e2e_keypoint_rcnn_R_50_FPN_1x_caffe2.yaml"
+    config_file = "../configs/caffe2/e2e_faster_rcnn_R_50_C4_1x_caffe2.yaml"
+    #config_file = "../configs/caffe2/e2e_keypoint_rcnn_R_50_FPN_1x_caffe2.yaml"
     
     # update the config options with the config file
     cfg.merge_from_file(config_file)

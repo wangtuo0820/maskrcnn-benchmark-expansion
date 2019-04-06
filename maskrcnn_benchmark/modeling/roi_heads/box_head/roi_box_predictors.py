@@ -10,7 +10,7 @@ class FastRCNNPredictor(nn.Module):
 
         stage_index = 4
         stage2_relative_factor = 2 ** (stage_index - 1)
-        res2_out_channels = config.MODEL.RESNETS.RES2_OUT_CHANNELS
+        res2_out_channels = config.MODEL.RESNETS.RES2_OUT_CHANNELS if config.MODEL.RESNETS.USE_BOTTLENECK else 64
         num_inputs = res2_out_channels * stage2_relative_factor
 
         num_classes = config.MODEL.ROI_BOX_HEAD.NUM_CLASSES

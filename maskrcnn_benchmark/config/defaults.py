@@ -253,6 +253,9 @@ _C.MODEL.ROI_KEYPOINT_HEAD.SHARE_BOX_FEATURE_EXTRACTOR = True
 # ---------------------------------------------------------------------------- #
 _C.MODEL.RESNETS = CN()
 
+# Use BottleNeck
+_C.MODEL.RESNETS.USE_BOTTLENECK = True
+
 # Number of groups to use; 1 ==> ResNet; > 1 ==> ResNeXt
 _C.MODEL.RESNETS.NUM_GROUPS = 1
 
